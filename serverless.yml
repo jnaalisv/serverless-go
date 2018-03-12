@@ -29,11 +29,6 @@ package:
    - ./bin/**
 
 functions:
-  hello:
-    handler: bin/hello
-  world:
-    handler: bin/world
-
   create:
     handler: bin/create
     events:
