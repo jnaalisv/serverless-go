@@ -8,50 +8,46 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"fmt"
 	"os"
+	"context"
 )
-
-type Response struct {
-	Message string `json:"message"`
-}
 
 type Item struct {
 	Id string`json:"id"`
 	Data string`json:"data"`
+	// ExpirationTime string`json:"ExpirationTime"`
 }
 
-func Handler() (Response, error) {
-
-	item := Item{
-		Id: "my-id",
-		Data: "The Big New Movie",
-	}
-
-	av, err := dynamodbattribute.MarshalMap(item)
-
-
-	input := &dynamodb.PutItemInput{
-		Item: av,
-		TableName: aws.String("Movies"),
-	}
-
-	sess, err := session.NewSession(&aws.Config{
+func withDynamoSession() (*dynamodb.DynamoDB){
+	mySession, err := session.NewSession(&aws.Config{
 		Region: aws.String("eu-central-1")},
 	)
-	svc := dynamodb.New(sess)
-
-	_, err = svc.PutItem(input)
-
 	if err != nil {
-		fmt.Println("Got error calling PutItem:")
+		fmt.Println("Got error calling createSession:")
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+	return dynamodb.New(mySession)
+}
 
-	fmt.Println("Successfully added 'The Big New Movie' (2015) to Movies table")
+func Handler(ctx context.Context, item Item) (string, error) {
 
-	return Response{
-		Message: "Successfully added 'The Big New Movie' (2015) to Movies table",
-	}, nil
+	av, err := dynamodbattribute.MarshalMap(item)
+
+	condition := "attribute_not_exists(id)"
+
+	inputCommand := &dynamodb.PutItemInput{
+		Item: av,
+		TableName: aws.String("Movies"),
+		ConditionExpression: &condition,
+	}
+
+	_, err = withDynamoSession().PutItem(inputCommand)
+
+	if err == nil {
+		return fmt.Sprintf("Successfully added new item with id %v", item.Id), nil
+	} else {
+		return fmt.Sprintf("Got error %v, calling PutItem with id %v", err.Error(), item.Id), nil
+	}
 }
 
 func main() {
