@@ -36,11 +36,11 @@ functions:
           path: create
           method: post
 
-  readAllKeys:
-    handler: bin.readAllKeys
+  read:
+    handler: bin/read
     events:
       - http:
-          path: readAllKeys
+          path: read
           method: get
 
 resources:
