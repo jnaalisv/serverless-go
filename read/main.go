@@ -15,6 +15,11 @@ type GetItemEvent struct {
 	Id string`json:"id"`
 }
 
+type MyDataItem struct {
+	Id string`json:"id"`
+	Data string`json:"data"`
+}
+
 func withDynamoSession() (*dynamodb.DynamoDB){
 	mySession, err := session.NewSession(&aws.Config{
 		Region: aws.String("eu-central-1")},
@@ -27,16 +32,18 @@ func withDynamoSession() (*dynamodb.DynamoDB){
 	return dynamodb.New(mySession)
 }
 
-func Handler(ctx context.Context, event GetItemEvent) (map[string]*dynamodb.AttributeValue, error) {
-
-	av, err := dynamodbattribute.MarshalMap(event)
+func Handler(ctx context.Context, event GetItemEvent) (MyDataItem, error) {
 
 	getItemCommand := &dynamodb.GetItemInput{
 		TableName: aws.String("Movies"),
-		Key: av,
+		Key: map[string]*dynamodb.AttributeValue{
+			"id": {
+				S: aws.String(event.Id),
+			},
+		},
 	}
 
-	pGetItemOutput, err := withDynamoSession().GetItem(getItemCommand)
+	result, err := withDynamoSession().GetItem(getItemCommand)
 
 	if err != nil {
 		fmt.Println("Got error calling GetItem:")
@@ -44,7 +51,16 @@ func Handler(ctx context.Context, event GetItemEvent) (map[string]*dynamodb.Attr
 		os.Exit(1)
 	}
 
-	return pGetItemOutput.Item, nil
+
+	item := MyDataItem{}
+
+	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
+
+	if err != nil {
+		panic(fmt.Sprintf("Failed to unmarshal Record, %v", err))
+	}
+	
+	return item, nil
 }
 
 func main() {
