@@ -11,10 +11,6 @@ import (
 	"context"
 )
 
-type GetItemEvent struct {
-	Id string`json:"id"`
-}
-
 type MyDataItem struct {
 	Id string`json:"id"`
 	Data string`json:"data"`
@@ -32,7 +28,7 @@ func withDynamoSession() (*dynamodb.DynamoDB){
 	return dynamodb.New(mySession)
 }
 
-func Handler(ctx context.Context, event GetItemEvent) ([]MyDataItem, error) {
+func Handler(ctx context.Context) ([]MyDataItem, error) {
 
 	var itemsSlice []MyDataItem
 
