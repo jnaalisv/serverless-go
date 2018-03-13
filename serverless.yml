@@ -43,6 +43,13 @@ functions:
           path: read
           method: get
 
+  readAll:
+    handler: bin/readAll
+    events:
+      - http:
+          path: readAll
+          method: get
+
 resources:
   Resources:
     ReportDB:
