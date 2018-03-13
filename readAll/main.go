@@ -30,29 +30,22 @@ func withDynamoSession() (*dynamodb.DynamoDB){
 
 func Handler(ctx context.Context) ([]MyDataItem, error) {
 
-	var itemsSlice []MyDataItem
-
-	err := withDynamoSession().ScanPages(&dynamodb.ScanInput{
+	output, err := withDynamoSession().Scan(&dynamodb.ScanInput{
 		TableName: aws.String("Movies"),
-	}, func(page *dynamodb.ScanOutput, last bool) bool {
-		recs := []MyDataItem{}
-
-		err := dynamodbattribute.UnmarshalListOfMaps(page.Items, &recs)
-		if err != nil {
-			panic(fmt.Sprintf("failed to unmarshal Dynamodb Scan Items, %v", err))
-		}
-
-		itemsSlice = append(itemsSlice, recs...)
-		return true // keep paging
 	})
 
 	if err != nil {
-		fmt.Println("Got error calling Scan:")
-		fmt.Println(err.Error())
-		os.Exit(1)
+		panic(fmt.Sprintf("Got error calling Scan, %v", err))
 	}
 
-	return itemsSlice, nil
+	items := []MyDataItem{}
+
+	err = dynamodbattribute.UnmarshalListOfMaps(output.Items, &items)
+	if err != nil {
+		panic(fmt.Sprintf("failed to unmarshal Dynamodb Scan Items, %v", err))
+	}
+
+	return items, nil
 }
 
 func main() {
